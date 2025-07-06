@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const auth = require('../middleware/auth');
-const admin = require('../controllers/adminController');
+const admin = require('../controllers/adminControllers.js');
 
 router.post('/employee', auth(['admin']), admin.addEmployee);
 router.get('/employees', auth(['admin']), admin.getEmployees);
