@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Employee Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="box">
+    <h2>My Tasks</h2>
+    <div id="taskList"></div>
+
+    <h2>Dashboard</h2>
+    <button onclick="loadDashboard()">Load</button>
+    <div id="dash"></div>
+  </div>
+  <script>
+    const token = localStorage.getItem('token');
+    const userId = localStorage.getItem('userId');
+    if (!token || localStorage.getItem('role') !== 'employee') window.location.href = 'index.html';
+
+    async function loadTasks() {
+      const res = await fetch('/employee/tasks', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      const data = await res.json();
+      const html = data.map(t => `
+        <form onsubmit="return completeTask('${t._id}', this)">
+          <b>${t.description}</b><br>
+          Remark: <input name="remark" required />
+          Photo: <input type="file" name="photo" required />
+          <button>Complete</button>
+        </form><hr>`).join('');
+      document.getElementById('taskList').innerHTML = html || '<i>No pending tasks</i>';
+    }
+
+    async function completeTask(taskId, form) {
+      const formData = new FormData(form);
+      const res = await fetch(`/employee/complete-task/${taskId}`, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token },
+        body: formData
+      });
+      await res.json(); // wait for save to complete
+      form.querySelector('button').disabled = true;
+      alert('✅ Task marked as completed!');
+      setTimeout(loadTasks, 300); // reload updated task list
+      return false;
+    }
+
+    async function loadDashboard() {
+      const res = await fetch('/employee/dashboard', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      const data = await res.json();
+      document.getElementById('dash').innerHTML =
+        `Total: ${data.total}, ✅ Completed: ${data.completed}, ⏳ Pending: ${data.pending}`;
+    }
+
+    loadTasks();
+  </script>
+</body>
+</html>

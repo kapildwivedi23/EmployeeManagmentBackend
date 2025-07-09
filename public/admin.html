@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="box">
+    <h2>Add Employee</h2>
+    <input id="ename" placeholder="Name" />
+    <input id="euser" placeholder="Username" />
+    <input id="epass" type="password" placeholder="Password" />
+    <button onclick="addEmployee()">Add</button>
+
+    <h2>Assign Task</h2>
+    <select id="employeeList"></select>
+    <input id="taskDesc" placeholder="Task Description" />
+    <button onclick="assignTask()">Assign</button>
+
+    <h2>Employee Reports</h2>
+    <button onclick="loadReport()">Load Report</button>
+    <div id="report"></div>
+  </div>
+  <script>
+    const token = localStorage.getItem('token');
+    if (!token || localStorage.getItem('role') !== 'admin') window.location.href = 'index.html';
+
+    async function addEmployee() {
+      const res = await fetch('/admin/employee', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({
+          name: document.getElementById('ename').value,
+          username: document.getElementById('euser').value,
+          password: document.getElementById('epass').value,
+          role: 'employee'
+        })
+      });
+      alert('Employee added');
+      loadEmployees();
+    }
+
+    async function loadEmployees() {
+      const res = await fetch('/admin/employees', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      const data = await res.json();
+      const list = document.getElementById('employeeList');
+      list.innerHTML = data.map(emp => `<option value="${emp._id}">${emp.name}</option>`).join('');
+    }
+
+    async function assignTask() {
+      const res = await fetch('/admin/assign-task', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({
+          employeeId: document.getElementById('employeeList').value,
+          description: document.getElementById('taskDesc').value
+        })
+      });
+      alert('Task assigned');
+    }
+
+    async function loadReport() {
+      const res = await fetch('/admin/report', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      const data = await res.json();
+      document.getElementById('report').innerHTML = data.map(r =>
+        `<b>${r.name}</b>: Total ${r.total}, ✅ ${r.completed}, ⏳ ${r.pending}`).join('<br>');
+    }
+
+    loadEmployees();
+  </script>
+</body>
+</html>
